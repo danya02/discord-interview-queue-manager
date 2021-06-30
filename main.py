@@ -1,9 +1,9 @@
 import os
 import discord
+from discord.ext import tasks
 import asyncio
-from apscheduler.schedulers.async_ import AsyncScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from apscheduler.workers.async_ import AsyncWorker
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -12,27 +12,29 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 LISTEN_CHAN = int(os.getenv('LISTEN_CHANNEL'))
 WAIT_ROLE = int(os.getenv('WAITING_ROLE'))
 
-client = discord.Client()
 
+class MyClient(discord.Client):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-@client.event
-async def on_message(message):
-    if message.channel.id == LISTEN_CHAN:
-      await message.author.add_roles(discord.Object(WAIT_ROLE))
+        # start the task to run in the background
+        self.say_hello.start()
 
-async def say_hello():
-    print('Hello World!')
+    async def on_ready():
+        logging.warn('Discord client ready!')
 
-async def scheduler():
-    async with AsyncScheduler() as scheduler, AsyncWorker(scheduler.data_store):
-        await scheduler.add_schedule(say_hello, IntervalTrigger(seconds=60))
-        await scheduler.wait_until_stopped()
+    async def on_message(self, message):
+        if message.channel.id == LISTEN_CHAN:
+            logging.info('Message in listening channel received!')
+            await message.author.add_roles(discord.Object(WAIT_ROLE))
 
-def main():
-    loop = asyncio.get_event_loop()
-    discord_task = asyncio.create_task(client.start(TOKEN))
-    scheduler_task = asyncio.create_task(scheduler())
+    @tasks.loop(seconds=5)
+    async def say_hello(self):
+        logging.warning('Hello World!')
 
-    gathered = await asyncio.gather(discord_task, scheduler_task)
+    @say_hello.before_loop
+    async def before_task(self):
+        await self.wait_until_ready()
 
+client = MyClient()
 client.run(TOKEN)
