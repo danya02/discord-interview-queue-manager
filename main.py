@@ -1,13 +1,11 @@
 import os
 import discord
 from discord.ext import tasks
-import asyncio
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.interval import IntervalTrigger
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
+MY_GUILD = os.getenv('MY_GUILD')
 TOKEN = os.getenv('DISCORD_TOKEN')
 LISTEN_CHAN = int(os.getenv('LISTEN_CHANNEL'))
 WAIT_ROLE = int(os.getenv('WAITING_ROLE'))
@@ -30,6 +28,7 @@ class MyClient(discord.Client):
 
     @tasks.loop(seconds=5)
     async def say_hello(self):
+        guild = self.get_guild(MY_GUILD)
         logging.warning('Hello World!')
 
     @say_hello.before_loop
