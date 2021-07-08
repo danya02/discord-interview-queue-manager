@@ -27,17 +27,38 @@ NO_APPLY_ROLES = [
 NO_APPLY_CHAN = os.getenv('NO_APPLY_NOTIFICATION_CHANNEL')
 
 CHECK_INTERVAL = 60
+TASK_RESTART_ATTEMPTS = 5
 
 class MyClient(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, command_prefix='&&&&&&&&', **kwargs)
         self.last_checked = 0
+        self.tried_restarting = 0
+        self.run_on_websocket_event_times = 0
 
         # start the task to run in the background
         self.check_for_old_members.start()
 
         self.add_cog(music.MusicOnInterviewComplete(self))
         self.add_cog(remove_waiting_on_interview_complete.RemoveWaitingOnInterviewComplete(self))
+
+    async def on_socket_raw_receive(self, msg):
+        cur_time = time.time()
+        if cur_time - self.last_checked > CHECK_INTERVAL:
+            logging.debug("We went too long without a check. What's the status of the task?")
+            if notself.check_for_old_members.is_running():
+                if not self.is_ready():
+                    logging.debug("It is not running, but the client isn't ready, so skipping this event.")
+                    return
+                logging.debug("It is not running! Should it be restarted, or just ran manually?")
+                if self.tried_restarting <= TASK_RESTARTING_ATTEMPTS:
+                    self.tried_restarting += 1
+                    logging.error("Check members task failed, being restarted now!")
+                    self.check_for_old_members.start()
+                else:
+                    logging.error(f"Check members task failed too many times, running on websocket event now! (did that {self.run_on_websocket_event_times} times already)")
+                    self.run_on_websocket_event_times += 1
+                    await self.check_for_old_members()
 
     async def on_ready(self):
         logging.warning('Discord client ready!')
