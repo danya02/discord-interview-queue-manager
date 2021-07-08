@@ -1,10 +1,14 @@
 import os
 import discord
-from discord.ext import tasks
+from discord.ext import tasks, commands
 import datetime
+import time
 
 import logging
 logging.basicConfig(level=logging.INFO)
+
+import cogs.music_on_interview_complete as music
+import cogs.remove_waiting_on_interview_complete as remove_waiting_on_interview_complete
 
 MY_GUILD = os.getenv('MY_GUILD')
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -22,12 +26,18 @@ NO_APPLY_ROLES = [
 
 NO_APPLY_CHAN = os.getenv('NO_APPLY_NOTIFICATION_CHANNEL')
 
-class MyClient(discord.Client):
+CHECK_INTERVAL = 60
+
+class MyClient(commands.Bot):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, command_prefix='&&&&&&&&', **kwargs)
+        self.last_checked = 0
 
         # start the task to run in the background
         self.check_for_old_members.start()
+
+        self.add_cog(music.MusicOnInterviewComplete(self))
+        self.add_cog(remove_waiting_on_interview_complete.RemoveWaitingOnInterviewComplete(self))
 
     async def on_ready(self):
         logging.warning('Discord client ready!')
@@ -50,6 +60,7 @@ class MyClient(discord.Client):
 
     @tasks.loop(seconds=30)
     async def check_for_old_members(self):
+        self.last_checked = time.time()
         logging.info('Checking old members now!')
         guild = self.get_guild(MY_GUILD)
         logging.warn('Getting guild failed, fetching instead.')
