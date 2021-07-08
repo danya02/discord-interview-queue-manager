@@ -11,9 +11,9 @@ with open('interview-ok.mp3', 'wb') as o:
 with open('interview-fail.mp3', 'wb') as o:
     o.write(requests.get(INTERVIEW_FAILED).content)
 
-os.system("ffmpeg-normalize interview-ok.mp3 -t-11 -nt rms -ext mkv")
+os.system("ffmpeg-normalize interview-ok.mp3 -t-20 -nt rms -ext mkv")
 os.unlink("interview-ok.mp3")
 os.rename("normalized/interview-ok.mkv", "interview-ok.mkv")
-os.system("ffmpeg-normalize interview-fail.mp3 -t-11 -nt rms -ext mkv")
+os.system("ffmpeg-normalize interview-fail.mp3 -t-20 -nt rms -ext mkv")
 os.unlink("interview-fail.mp3")
 os.rename("normalized/interview-fail.mkv", "interview-fail.mkv")
