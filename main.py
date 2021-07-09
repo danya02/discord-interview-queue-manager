@@ -5,10 +5,12 @@ import datetime
 import time
 
 import logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 import cogs.music_on_interview_complete as music
 import cogs.remove_waiting_on_interview_complete as remove_waiting_on_interview_complete
+import cogs.one_click_interview as oneclick
+
 
 MY_GUILD = os.getenv('MY_GUILD')
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -39,14 +41,15 @@ class MyClient(commands.Bot):
         # start the task to run in the background
         self.check_for_old_members.start()
 
-        self.add_cog(music.MusicOnInterviewComplete(self))
         self.add_cog(remove_waiting_on_interview_complete.RemoveWaitingOnInterviewComplete(self))
+        self.add_cog(music.MusicOnInterviewComplete(self))
+        self.add_cog(oneclick.OneClickInterview(self))
 
     async def on_socket_raw_receive(self, msg):
         cur_time = time.time()
         if cur_time - self.last_checked > CHECK_INTERVAL:
             logging.debug("We went too long without a check. What's the status of the task?")
-            if notself.check_for_old_members.is_running():
+            if not self.check_for_old_members.is_running():
                 if not self.is_ready():
                     logging.debug("It is not running, but the client isn't ready, so skipping this event.")
                     return
@@ -130,7 +133,7 @@ class MyClient(commands.Bot):
                 logging.debug(f'Member {member.display_name} joined {joined_seconds_ago}s ago, intervals: {longer_than_interval}')
 
                 # if the member already has the role saying they got this message, do not send it
-                logging.info(f'This member should have this role now: {NO_APPLY_ROLES[index_active]}')
+                logging.debug(f'This member should have this role now: {NO_APPLY_ROLES[index_active]}')
                 if NO_APPLY_ROLES[index_active][1] in role_ids:
                     logging.debug('This member already has the role they should at this time.')
                     continue
