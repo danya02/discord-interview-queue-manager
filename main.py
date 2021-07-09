@@ -10,6 +10,7 @@ logging.basicConfig(level=logging.DEBUG)
 import cogs.music_on_interview_complete as music
 import cogs.remove_waiting_on_interview_complete as remove_waiting_on_interview_complete
 import cogs.one_click_interview as oneclick
+import cogs.balls_reaction as balls
 
 
 MY_GUILD = os.getenv('MY_GUILD')
@@ -44,6 +45,7 @@ class MyClient(commands.Bot):
         self.add_cog(remove_waiting_on_interview_complete.RemoveWaitingOnInterviewComplete(self))
         self.add_cog(music.MusicOnInterviewComplete(self))
         self.add_cog(oneclick.OneClickInterview(self))
+        self.add_cog(balls.BallsReaction(self))
 
     async def on_socket_raw_receive(self, msg):
         cur_time = time.time()
