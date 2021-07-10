@@ -12,6 +12,7 @@ import cogs.remove_waiting_on_interview_complete as remove_waiting_on_interview_
 import cogs.one_click_interview as oneclick
 import cogs.balls_reaction as balls
 import cogs.remove_interview_requests as stale
+import cogs.disboard_timeout_indicator as disboard
 
 #logging.getLogger(stale.__name__).basicConfig(logging.DEBUG)
 
@@ -53,6 +54,7 @@ class MyClient(commands.Bot):
         self.add_cog(oneclick.OneClickInterview(self))
         self.add_cog(balls.BallsReaction(self))
         self.add_cog(stale.RemoveStaleInterviewRequests(self))
+        self.add_cog(disboard.DisboardReaction(self))
 
 
     async def chat_log(self, *args, **kwargs):
