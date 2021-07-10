@@ -5,13 +5,15 @@ import datetime
 import time
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 import cogs.music_on_interview_complete as music
 import cogs.remove_waiting_on_interview_complete as remove_waiting_on_interview_complete
 import cogs.one_click_interview as oneclick
 import cogs.balls_reaction as balls
+import cogs.remove_interview_requests as stale
 
+#logging.getLogger(stale.__name__).basicConfig(logging.DEBUG)
 
 MY_GUILD = os.getenv('MY_GUILD')
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -46,6 +48,7 @@ class MyClient(commands.Bot):
         self.add_cog(music.MusicOnInterviewComplete(self))
         self.add_cog(oneclick.OneClickInterview(self))
         self.add_cog(balls.BallsReaction(self))
+        self.add_cog(stale.RemoveStaleInterviewRequests(self))
 
     async def on_socket_raw_receive(self, msg):
         cur_time = time.time()
@@ -89,7 +92,7 @@ class MyClient(commands.Bot):
         self.last_checked = time.time()
         logging.debug('Checking old members now!')
         guild = self.get_guild(MY_GUILD)
-        logging.warn('Getting guild failed, fetching instead.')
+        logging.warning('Getting guild failed, fetching instead.')
         if guild is None:
             guild = await self.fetch_guild(MY_GUILD)
             if guild is None:
