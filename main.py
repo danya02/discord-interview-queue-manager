@@ -179,7 +179,7 @@ class MyClient(commands.Bot):
                     S = 's' if times_left > 2 else ''
                     text += f'I will remind you about this {times_left} more time{S}, the next time will be when you\'ve been a member for {human_descriptions[index_not_active]}.'
 
-                await notify_chan.send(text)
+                await notify_chan.send(text, allowed_mentions=discord.AllowedMentions.all())
                 await self.clear_no_apply_roles(member)
                 await member.add_roles(discord.Object(NO_APPLY_ROLES[index_active][1]))
 
