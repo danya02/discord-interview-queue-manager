@@ -29,7 +29,9 @@ NO_APPLY_ROLES = [
         (14*86400, int(os.getenv('NO_APPLY_14DAYS')), "14 days"),
         ]
 
-NO_APPLY_CHAN = os.getenv('NO_APPLY_NOTIFICATION_CHANNEL')
+NO_APPLY_CHAN = int(os.getenv('NO_APPLY_NOTIFICATION_CHANNEL'))
+
+LOG_CHANNEL = int(os.getenv('LOG_CHANNEL'))
 
 CHECK_INTERVAL = 60
 TASK_RESTART_ATTEMPTS = 5
@@ -41,6 +43,8 @@ class MyClient(commands.Bot):
         self.tried_restarting = 0
         self.run_on_websocket_event_times = 0
 
+        self.log_channel = None
+
         # start the task to run in the background
         self.check_for_old_members.start()
 
@@ -49,6 +53,16 @@ class MyClient(commands.Bot):
         self.add_cog(oneclick.OneClickInterview(self))
         self.add_cog(balls.BallsReaction(self))
         self.add_cog(stale.RemoveStaleInterviewRequests(self))
+
+
+    async def chat_log(self, *args, **kwargs):
+        if self.log_channel is None:
+            logging.error(f"Tried performing chat log when channel is unavailable! Params: {args}, {kwargs}")
+            return
+        try:
+            await self.log_channel.send(*args, **kwargs)
+        except Exception as e:
+            logging.error(f"Error while sending log message ignored", exc_info=e)
 
     async def on_socket_raw_receive(self, msg):
         cur_time = time.time()
@@ -63,17 +77,22 @@ class MyClient(commands.Bot):
                     self.tried_restarting += 1
                     logging.error("Check members task failed, being restarted now!")
                     self.check_for_old_members.start()
+                    await self.chat_log(f"Check members task failed ({self.tried_restarting}/{TASK_RESTART_ATTEMPTS}), restarting it now!")
                 else:
                     logging.error(f"Check members task failed too many times, running on websocket event now! (did that {self.run_on_websocket_event_times} times already)")
+                    await self.chat_log(f"Check members task failed too many times, running on websocket event now! (did that {self.run_on_websocket_event_times} times already)")
                     self.run_on_websocket_event_times += 1
                     await self.check_for_old_members()
 
     async def on_ready(self):
         logging.warning('Discord client ready!')
+        self.log_channel = self.get_channel(LOG_CHANNEL)
+        await self.chat_log("My Discord client is connected to gateway!")
 
     async def on_message(self, message):
         if message.channel.id == LISTEN_CHAN:
             logging.info('Message in listening channel received!')
+            self.chat_log(f"{message.author.mention} sent a message to {message.channel.mention}; giving them <@&{WAIT_ROLE}>", allowed_mentions=discord.AllowedMentions.none())
             await message.author.add_roles(discord.Object(WAIT_ROLE))
 
     async def clear_no_apply_roles(self, member):
@@ -84,6 +103,8 @@ class MyClient(commands.Bot):
             if role in role_ids:
                 roles_to_remove.append(discord.Object(role))
         if roles_to_remove:
+            mentions = ', '.join([f"<@&{i.id}>" for i in roles_to_remove])
+            await self.chat_log(f"Taking these time-series roles from {member.mention}: {mentions}", allowed_mentions=discord.AllowedMentions.none())
             await member.remove_roles(*roles_to_remove)
 
 
@@ -147,6 +168,7 @@ class MyClient(commands.Bot):
                     logging.debug('This member is too young, not sending messages.')
                     continue
 
+                await self.chat_log(f"The member {member.mention} has passed a threshold. Their current threshold statuses are {longer_than_intervals}, and they have joined {joined_seconds_ago} seconds ago.")
                 text = f'{member.mention}, you have been a member of this server for {human_descriptions[index_active]}, but you have not yet applied for the onboarding interview. You must pass the interview to get access to the Minecraft server, and without it you will only be able to chat in public channels. Please look at <#859356937979822100> for more information.\n\n'
                 if all(longer_than_interval):
                     text += 'This was your last notification, I will not notify you to apply for the onboarding interview anymore.'
@@ -167,5 +189,5 @@ class MyClient(commands.Bot):
 
 intents = discord.Intents.default()
 intents.members=True
-client = MyClient(intents=intents)
+client = MyClient(intents=intents, allowed_mentions=discord.AllowedMentions.none())
 client.run(TOKEN)

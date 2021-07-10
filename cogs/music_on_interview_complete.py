@@ -22,13 +22,16 @@ class MusicOnInterviewComplete(commands.Cog):
                 state = -1
             elif role.id == PASSED_ROLE and state == 0:  # failed beats passed; if there is a "failed" role, then the sound effect to play is still "failed".
                 state = 1
-        
+
+        if not state: return
+
         if after.voice is None or after.voice.channel is None:
             logging.debug(f"Member {after} is not in a voice channel, not playing music.")
 
         if state:
             logging.info(f"Passed status changed for member {after}: {state}")
             filenames = {1: '/interview-ok.mkv', -1: '/interview-fail.mkv'}
+            await self.bot.chat_log(f"Member {after.mention} changed their interview state to {state} while in a voice channel, playing `{filenames[state]}`")
             source = discord.FFmpegOpusAudio(filenames[state])
             client = await after.voice.channel.connect()
             client.play(source)
@@ -38,4 +41,5 @@ class MusicOnInterviewComplete(commands.Cog):
             await client.disconnect()
 
             if after.voice.channel.id == INT_CHAN:
+                await self.bot.chat_log(f"{after.mention} is currently in the interview channel, disconnecting them.")
                 await after.move_to(None, reason="Member completed interview while in an interview channel")

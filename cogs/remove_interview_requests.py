@@ -50,16 +50,30 @@ class RemoveStaleInterviewRequests(commands.Cog):
             return
 
         await self.chan.guild.chunk()  # Refresh member cache to be sure that member information is up-to-date
-        await self.chan.purge(limit=None, check=self.is_stale)
+        messages_to_delete = []
+        examined = 0
+        async for msg in self.chan.history(limit=None):
+            examined += 1
+            if self.is_stale(msg):
+                messages_to_delete.append(msg)
+
+        if messages_to_delete:
+            await self.bot.chat_log(f"Found {len(messages_to_prune)}/{examined} messages to prune: {messages_to_delete}")
+            await self.chan.delete_messages(messages_to_delete)
+        else:
+            await self.bot.chat_log(f"Found no messages to prune out of {examined}")
+
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
         logger.info(f"{member} joined, running stale pruning")
+        await self.bot.chat_log(f"{member.mention} joined, running stale pruning")
         await self.delete_stale()
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
         logger.info(f"{member} left, running stale pruning")
+        await self.bot.chat_log(f"{member.mention} left, running stale pruning")
         await self.delete_stale()
 
 
@@ -69,9 +83,8 @@ class RemoveStaleInterviewRequests(commands.Cog):
         if self.passed_role is None or self.failed_role is None:
             await self.on_ready()
         
-        logger.info(f"{after} updated relevant roles, running stale pruning")
 
         if self.passed_role in difference or self.failed_role in difference:
+            logger.info(f"{after} updated relevant roles, running stale pruning")
+            await self.bot.chat_log(f"{after.mention} updated relevant roles, running stale pruning")
             await self.delete_stale()
-
-

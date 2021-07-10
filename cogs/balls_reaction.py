@@ -31,6 +31,7 @@ class BallsReaction(commands.Cog):
         if 'balls' in message.content.lower():
             random.shuffle(BALLS_EMOJI)
             my_emojis = BALLS_EMOJI[:3]
+            await self.bot.chat_log(embed=discord.Embed(description=f"[This message]({message.jump_url}) contains the substring 'balls', reacting with {my_emojis}."))
             for i in my_emojis:
                 logging.debug(f"Reacting to {message} with {i}")
                 await message.add_reaction(i)
