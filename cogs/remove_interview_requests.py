@@ -58,7 +58,7 @@ class RemoveStaleInterviewRequests(commands.Cog):
                 messages_to_delete.append(msg)
 
         if messages_to_delete:
-            await self.bot.chat_log(f"Found {len(messages_to_prune)}/{examined} messages to prune: {messages_to_delete}")
+            await self.bot.chat_log(f"Found {len(messages_to_delete)}/{examined} messages to prune: {messages_to_delete}")
             await self.chan.delete_messages(messages_to_delete)
         else:
             await self.bot.chat_log(f"Found no messages to prune out of {examined}")
