@@ -170,7 +170,7 @@ class MyClient(commands.Bot):
                     logging.debug('This member is too young, not sending messages.')
                     continue
 
-                await self.chat_log(f"The member {member.mention} has passed a threshold. Their current threshold statuses are {longer_than_intervals}, and they have joined {joined_seconds_ago} seconds ago.")
+                await self.chat_log(f"The member {member.mention} has passed a threshold. Their current threshold statuses are {longer_than_interval}, and they have joined {joined_seconds_ago} seconds ago.")
                 text = f'{member.mention}, you have been a member of this server for {human_descriptions[index_active]}, but you have not yet applied for the onboarding interview. You must pass the interview to get access to the Minecraft server, and without it you will only be able to chat in public channels. Please look at <#859356937979822100> for more information.\n\n'
                 if all(longer_than_interval):
                     text += 'This was your last notification, I will not notify you to apply for the onboarding interview anymore.'
