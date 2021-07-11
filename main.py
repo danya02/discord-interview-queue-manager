@@ -75,7 +75,7 @@ class MyClient(commands.Bot):
                     logging.debug("It is not running, but the client isn't ready, so skipping this event.")
                     return
                 logging.debug("It is not running! Should it be restarted, or just ran manually?")
-                if self.tried_restarting <= TASK_RESTARTING_ATTEMPTS:
+                if self.tried_restarting <= TASK_RESTART_ATTEMPTS:
                     self.tried_restarting += 1
                     logging.error("Check members task failed, being restarted now!")
                     self.check_for_old_members.start()
